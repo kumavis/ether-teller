@@ -2,7 +2,7 @@
 
 Automated Ethereum Wallet Management.
 
-Use with (`ancient-tome`)[https://github.com/kumavis/ancient-tome] and `ancient-tome/indexer`.
+Use with [`ancient-tome`](https://github.com/kumavis/ancient-tome) and `ancient-tome/indexer`.
 
 ```js
 var AncientLocal = require('ancient-tome/local')
