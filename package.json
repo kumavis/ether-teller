@@ -1,12 +1,16 @@
 {
-  "name": "eth-teller",
+  "name": "ether-teller",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "",
+  "repository": {
+    "type" : "git",
+    "url": "https://github.com/kumavis/ether-teller.git"
+  },
+  "author": "kumavis",
   "license": "ISC",
   "dependencies": {
     "crypto": "0.0.3",
