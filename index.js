@@ -1,11 +1,12 @@
-var Uuid = require('hat')
-var extend = require('xtend')
-var crypto = require('crypto')
-var EC = require('elliptic').ec
-var ec = new EC('secp256k1')
-var ethUtil = require('ethereumjs-util')
+const Uuid = require('hat')
+const extend = require('xtend')
+const crypto = require('crypto')
+const EC = require('elliptic').ec
+const ec = new EC('secp256k1')
+const ethUtil = require('ethereumjs-util')
+const async = require('async')
 
-var keyStoragePrefix = 'key-'
+const keyStoragePrefix = 'key-'
 
 
 module.exports = function(storage) {
