@@ -12,9 +12,10 @@ module.exports = function(storage) {
 
   var apiObject = {
     lookup: lookup,
+    lookupAll: lookupAll,
     sign: sign,
     generateIdentity: generateIdentity,
-    keyList: keyList,
+    importIdentity: importIdentity,
   }
 
   return apiObject
@@ -41,14 +42,14 @@ module.exports = function(storage) {
     })
   }
 
-  function generateIdentity(name, cb) {
+  function generateIdentity(label, cb) {
 
     var privateKey = crypto.randomBytes(32)
     var publicKey = new Buffer(ec.keyFromPrivate(privateKey).getPublic('arr'))
 
     var keyPair = {
       id: Uuid(),
-      name: name,
+      label: label,
       privateKey: privateKey,
       publicKey: publicKey,
     }
@@ -61,6 +62,31 @@ module.exports = function(storage) {
 
   }
 
+  // publicKey and privateKey should be buffers
+  function importIdentity(data, cb) {
+
+    var keyPair = {
+      id: Uuid(),
+      label: data.label,
+      privateKey: data.privateKey,
+      publicKey: data.publicKey,
+    }
+
+    setKey(keyPair, function(err){
+      if (err) return cb(err)
+      cb(null, safeKeyDetails(keyPair))
+    })
+
+  }
+
+  // asynchronously returns safeKeyData for all keys
+  function lookupAll(cb){
+    async.map(keyList(), lookup, cb)
+  }
+
+  // private
+
+  // looks up all key ids from the index
   function keyList() {
     // filter for keys
     return storage.index()
@@ -71,8 +97,6 @@ module.exports = function(storage) {
         return entry.slice(keyStoragePrefix.length)
       })
   }
-
-  // private
 
   function getKey(keyId, cb) {
     storage.get(keyStoragePrefix+keyId, function(err, data){
@@ -88,7 +112,7 @@ module.exports = function(storage) {
   function safeKeyDetails(data) {
     return {
       id: data.id,
-      name: data.name,
+      label: data.label,
       address: ethUtil.pubToAddress(data.publicKey).toString('hex'),
     }
   }
