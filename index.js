@@ -24,10 +24,10 @@ module.exports = function(storage) {
     async.map(keyList(), lookupKey, cb)
   }
 
-  function generateIdentity(label, cb) {
+  function generateIdentity(opts, cb) {
     
     importIdentity({
-      label: label,
+      label: opts.label,
       privateKey: crypto.randomBytes(32),
     }, cb)
 
@@ -50,7 +50,7 @@ module.exports = function(storage) {
 
     setKey(keyPair, function(err){
       if (err) return cb(err)
-      cb(null, safeKeyDetails(keyPair))
+      cb(null, KeyObject(keyPair))
     })
 
   }
@@ -71,7 +71,7 @@ module.exports = function(storage) {
   function lookupKey(keyId, cb){
     getKey(keyId, function(err, data){
       if (err) return cb(err)
-      cb(null, safeKeyDetails(data))
+      cb(null, KeyObject(data))
     })
   }
 
