@@ -113,15 +113,15 @@ module.exports = function(storage) {
 
   function serializeKey(key) {
     var data = extend(key)
-    data.privateKey = key.privateKey.toString('base64')
-    data.publicKey = key.publicKey.toString('base64')
+    data.privateKey = key.privateKey.toString('binary')
+    data.publicKey = key.publicKey.toString('binary')
     return JSON.stringify(data)
   }
 
   function deserializeKey(data) {
     var key = JSON.parse(data)
-    key.privateKey = Buffer(key.privateKey, 'base64')
-    key.publicKey = Buffer(key.publicKey, 'base64')
+    key.privateKey = Buffer(key.privateKey, 'binary')
+    key.publicKey = Buffer(key.publicKey, 'binary')
     return key
   }
 
