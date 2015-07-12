@@ -10,9 +10,7 @@ const keyStoragePrefix = 'key-'
 module.exports = function(storage) {
 
   var apiObject = {
-    lookup: lookup,
     lookupAll: lookupAll,
-    sign: sign,
     generateIdentity: generateIdentity,
     importIdentity: importIdentity,
   }
@@ -21,24 +19,9 @@ module.exports = function(storage) {
 
   // public
 
-  function lookup(keyId, cb){
-    getKey(keyId, function(err, data){
-      if (err) return cb(err)
-      cb(null, safeKeyDetails(data))
-    })
-  }
-
-  function sign(keyId, tx, cb){
-    getKey(keyId, function(err, data){
-      if (err) return cb(err)
-      try {
-        var privateKey = new Buffer(data.privateKey, 'hex')
-        tx.sign(privateKey)
-        cb(null, tx)
-      } catch (err) {
-        if (err) return cb(err)
-      }
-    })
+  // asynchronously returns safeKeyData for all keys
+  function lookupAll(cb){
+    async.map(keyList(), lookupKey, cb)
   }
 
   function generateIdentity(label, cb) {
@@ -72,12 +55,38 @@ module.exports = function(storage) {
 
   }
 
-  // asynchronously returns safeKeyData for all keys
-  function lookupAll(cb){
-    async.map(keyList(), lookup, cb)
+  // private
+
+  function KeyObject(data) {
+    var id = data.id
+    return {
+      // properties
+      label: data.label,
+      address: data.address.toString('hex'),
+      // methods
+      signTx: signTx.bind(null, id),
+    }
   }
 
-  // private
+  function lookupKey(keyId, cb){
+    getKey(keyId, function(err, data){
+      if (err) return cb(err)
+      cb(null, safeKeyDetails(data))
+    })
+  }
+
+  function signTx(keyId, tx, cb){
+    getKey(keyId, function(err, data){
+      if (err) return cb(err)
+      try {
+        var privateKey = new Buffer(data.privateKey, 'hex')
+        tx.sign(privateKey)
+        cb(null, tx)
+      } catch (err) {
+        if (err) return cb(err)
+      }
+    })
+  }
 
   // looks up all key ids from the index
   function keyList() {
@@ -100,14 +109,6 @@ module.exports = function(storage) {
 
   function setKey(key, cb) {
     storage.set(keyStoragePrefix+key.id, serializeKey(key), cb)
-  }
-
-  function safeKeyDetails(data) {
-    return {
-      id: data.id,
-      label: data.label,
-      address: data.address.toString('hex'),
-    }
   }
 
   function serializeKey(key) {

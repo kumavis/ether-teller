@@ -27,18 +27,33 @@ secureStorage.open(password, function(err){
 
 ### api
 
-##### walletManager.lookup(keyId, cb)
 
-provides non-secret details ('name', internal uuid', 'address') for the ethereum key specified
+##### walletManager.lookupAll( cb(err, [KeyObject, ...]) )
 
-##### walletManager.sign(keyId, tx, cb)
+Loads all keys as KeyObjects
 
-signs a tx with the ethereum key specified
+##### walletManager.generateIdentity( { label: String }, cb(err, KeyObject) )
 
-##### walletManager.generateIdentity(name, cb)
+creates a new ethereum key with the label specified
 
-creates a new ethereum key with the name specified
+##### walletManager.importIdentity( { label: String, privateKey: Buffer }, cb(err, KeyObject) )
 
-##### walletManager.keyList()
+creates a new ethereum key with the label specified
 
-lists names of all ethereum keys stored
+### KeyObject
+
+A KeyObject is a simple representation of a key that does not directly expose the privateKey
+
+```js
+{
+  // properties
+  label: String,
+  address: String('non-prefixed hex'),
+  // methods
+  signTx: fn(Transaction),
+}
+```
+
+##### keyObject.signTx( Transaction, cb(err, Transaction) )
+
+Takes an ethereumjs-lib Transaction and a callback
