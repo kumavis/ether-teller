@@ -1,8 +1,6 @@
 const Uuid = require('hat')
 const extend = require('xtend')
 const crypto = require('crypto')
-const EC = require('elliptic').ec
-const ec = new EC('secp256k1')
 const ethUtil = require('ethereumjs-util')
 const async = require('async')
 
@@ -44,33 +42,27 @@ module.exports = function(storage) {
   }
 
   function generateIdentity(label, cb) {
-
-    var privateKey = crypto.randomBytes(32)
-    var publicKey = new Buffer(ec.keyFromPrivate(privateKey).getPublic('arr'))
-
-    var keyPair = {
-      id: Uuid(),
+    
+    importIdentity({
       label: label,
-      privateKey: privateKey,
-      publicKey: publicKey,
-    }
-
-    setKey(keyPair, function(err){
-      if (err) return cb(err)
-
-      cb(null, safeKeyDetails(keyPair))
-    })
+      privateKey: crypto.randomBytes(32),
+    }, cb)
 
   }
 
   // publicKey and privateKey should be buffers
-  function importIdentity(data, cb) {
+  function importIdentity(opts, cb) {
+
+    var privateKey = opts.privateKey
+    var publicKey = ethUtil.privateToPublic(privateKey)
+    var address = ethUtil.publicToAddress(publicKey)
 
     var keyPair = {
       id: Uuid(),
-      label: data.label,
-      privateKey: data.privateKey,
-      publicKey: data.publicKey,
+      label: opts.label,
+      privateKey: privateKey,
+      publicKey: publicKey,
+      address: address,
     }
 
     setKey(keyPair, function(err){
@@ -114,7 +106,7 @@ module.exports = function(storage) {
     return {
       id: data.id,
       label: data.label,
-      address: ethUtil.pubToAddress(data.publicKey).toString('hex'),
+      address: data.address.toString('hex'),
     }
   }
 
