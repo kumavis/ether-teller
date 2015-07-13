@@ -5,6 +5,7 @@ const ethUtil = require('ethereumjs-util')
 const async = require('async')
 const semaphore = require('semaphore')
 
+const binaryEncoding = 'base64'
 const keyStoragePrefix = 'key-'
 
 
@@ -117,15 +118,17 @@ module.exports = function(storage) {
 
   function serializeKey(key) {
     var data = extend(key)
-    data.privateKey = key.privateKey.toString('base64')
-    data.publicKey = key.publicKey.toString('base64')
+    data.privateKey = key.privateKey.toString(binaryEncoding)
+    data.publicKey = key.publicKey.toString(binaryEncoding)
+    data.address = key.address.toString(binaryEncoding)
     return JSON.stringify(data)
   }
 
   function deserializeKey(data) {
     var key = JSON.parse(data)
-    key.privateKey = Buffer(key.privateKey, 'base64')
-    key.publicKey = Buffer(key.publicKey, 'base64')
+    key.privateKey = Buffer(key.privateKey, binaryEncoding)
+    key.publicKey = Buffer(key.publicKey, binaryEncoding)
+    key.address = Buffer(key.address, binaryEncoding)
     return key
   }
 
