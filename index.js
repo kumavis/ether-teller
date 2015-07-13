@@ -59,16 +59,19 @@ module.exports = function(storage) {
       publicKey: publicKey,
       address: address,
     }
+    var keyObj = KeyObject(keyPair)
 
     ensureUnlocked(function(){
 
       appendToKeyIndex(keyPair.id)
       setKey(keyPair, function(err){
         if (err) return cb(err)
-        cb(null, KeyObject(keyPair))
+        cb(null, keyObj)
       })
 
     })
+
+    return keyObj
 
   }
 
