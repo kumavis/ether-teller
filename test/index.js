@@ -1,34 +1,29 @@
-var test = require('tape')
-var EthTeller = require('../index.js')
-var AncientLocal = require('ancient-tome/local')
-var TomeIndexer = require('ancient-tome/indexer')
-var Transaction = require('ethereumjs-lib').Transaction
+const test = require('tape')
+const EthTeller = require('../index.js')
+const memdown = require('memdown')
 
 test('generate identity', function(t){
-  clearLocalStorage()
-  setupWalletManager(function(err, walletManager){
-    t.notOk(err)
+  t.plan(2)
+
+  setupWalletManager(null, function(storage, walletManager){
     walletManager.generateIdentity({ label: 'first' }, function(err, wallet){
       t.notOk(err)
       t.ok(wallet)
-      t.end()
     })
   })
 })
 
 test('double setup', function(t){
-  clearLocalStorage()
-  setupWalletManager(function(err, walletManager){
-    t.notOk(err)
+  t.plan(4)
+
+  setupWalletManager(null, function(storage, walletManager){
     walletManager.generateIdentity({ label: 'first' }, function(err, wallet){
       t.notOk(err)
       t.ok(wallet)
-      setupWalletManager(function(err, walletManager){
-        t.notOk(err)
-        walletManager.generateIdentity({ label: 'first' }, function(err, wallet){
+      setupWalletManager(storage, function(storage, walletManager){
+        walletManager.lookupAll(function(err, wallets){
           t.notOk(err)
-          t.ok(wallet)
-          t.end()
+          t.equal(wallets.length, 1)
         })
       })
     })
@@ -38,25 +33,18 @@ test('double setup', function(t){
 
 // util
 
-function setupWalletManager(cb) {
-  var secureStorage = AncientLocal()
-  TomeIndexer(secureStorage)
-
-  secureStorage.open('1234_CatsLikePizza', function(err){
-    if (err) return cb(err)
-
-    secureStorage.getItem('test-data', function(err, plaintext) {
-      if (err) return cb(err)
-
-      var walletManager = EthTeller(secureStorage)
-      cb(null, walletManager)
-    })
-
-  })
-}
-
-function clearLocalStorage() {
-  for (var key in localStorage) {
-    localStorage.removeItem(key)
+function setupWalletManager(storage, cb) {
+  var task = null
+  
+  if (storage) {
+    task = process.nextTick.bind(process)
+  } else {
+    storage = memdown()
+    task = storage.open.bind(storage, '1234_CatsLikePizza')
   }
+
+  task(function(){
+    var walletManager = EthTeller(storage)
+    cb(storage, walletManager)
+  })
 }

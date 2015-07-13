@@ -1,27 +1,24 @@
 ## Eth-Teller
 
-Automated Ethereum Wallet Management.
+Ethereum Wallet Management.
 
 ### warning
 
-This is under development. Crypto has not been audited yet.
+This is under development. The API has not been frozen yet.
 
 ### usage
 
-Use with [`ancient-tome`](https://github.com/kumavis/ancient-tome) and `ancient-tome/indexer`.
+Use with a [`leveldown`](https://github.com/level/abstract-leveldown).
 
 ```js
-var AncientLocal = require('ancient-tome/local')
-var TomeIndexer = require('ancient-tome/indexer')
+var storage = memdown()
 
-var secureStorage = TomeIndexer(AncientLocal())
-
-secureStorage.open(password, function(err){
+storage.open(function(err){
   if (err) return cb(err)
 
-  var walletManager = EthTeller(secureStorage)
+  var walletManager = EthTeller(storage)
   walletManager.generateIdentity(name, function(err, wallet){ ... })
-
+  
 })
 ```
 

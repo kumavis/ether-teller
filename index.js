@@ -3,11 +3,16 @@ const extend = require('xtend')
 const crypto = require('crypto')
 const ethUtil = require('ethereumjs-util')
 const async = require('async')
+const semaphore = require('semaphore')
 
 const keyStoragePrefix = 'key-'
 
 
 module.exports = function(storage) {
+
+  var keyIndex = null
+  var lock = semaphore(1)
+  lock.leave = lock.leave.bind(lock)
 
   var apiObject = {
     lookupAll: lookupAll,
@@ -15,27 +20,33 @@ module.exports = function(storage) {
     importIdentity: importIdentity,
   }
 
+  // lock until keyIndex is loaded
+  lock.take(function(){
+    loadKeyIndex(lock.leave)
+  })
+  
   return apiObject
 
   // public
 
   // asynchronously returns safeKeyData for all keys
   function lookupAll(cb){
-    async.map(keyList(), lookupKey, cb)
+    ensureUnlocked(function(){
+      async.map(keyIndex, lookupKey, cb)
+    })
   }
 
   function generateIdentity(opts, cb) {
-    
-    importIdentity({
-      label: opts.label,
-      privateKey: crypto.randomBytes(32),
-    }, cb)
-
+    ensureUnlocked(function(){
+      importIdentity({
+        label: opts.label,
+        privateKey: crypto.randomBytes(32),
+      }, cb)
+    })
   }
 
-  // publicKey and privateKey should be buffers
+  // opts.privateKey should be a buffer
   function importIdentity(opts, cb) {
-
     var privateKey = opts.privateKey
     var publicKey = ethUtil.privateToPublic(privateKey)
     var address = ethUtil.publicToAddress(publicKey)
@@ -48,9 +59,14 @@ module.exports = function(storage) {
       address: address,
     }
 
-    setKey(keyPair, function(err){
-      if (err) return cb(err)
-      cb(null, KeyObject(keyPair))
+    ensureUnlocked(function(){
+
+      appendToKeyIndex(keyPair.id)
+      setKey(keyPair, function(err){
+        if (err) return cb(err)
+        cb(null, KeyObject(keyPair))
+      })
+
     })
 
   }
@@ -88,18 +104,6 @@ module.exports = function(storage) {
     })
   }
 
-  // looks up all key ids from the index
-  function keyList() {
-    // filter for keys
-    return storage.index()
-      .filter(function(entry){
-        return entry.slice(0, keyStoragePrefix.length) === keyStoragePrefix
-      })
-      .map(function(entry){
-        return entry.slice(keyStoragePrefix.length)
-      })
-  }
-
   function getKey(keyId, cb) {
     storage.get(keyStoragePrefix+keyId, function(err, data){
       if (err) return cb(err)
@@ -108,7 +112,7 @@ module.exports = function(storage) {
   }
 
   function setKey(key, cb) {
-    storage.set(keyStoragePrefix+key.id, serializeKey(key), cb)
+    storage.put(keyStoragePrefix+key.id, serializeKey(key), cb)
   }
 
   function serializeKey(key) {
@@ -123,6 +127,35 @@ module.exports = function(storage) {
     key.privateKey = Buffer(key.privateKey, 'base64')
     key.publicKey = Buffer(key.publicKey, 'base64')
     return key
+  }
+
+  function appendToKeyIndex(id){
+    keyIndex.push(id)
+    updateKeyIndex()
+  }
+
+  function updateKeyIndex(){
+    storage.put('keyIndex', JSON.stringify(keyIndex), function noop(){})
+  }
+
+  function loadKeyIndex(cb){
+    storage.get('keyIndex', function(err, data){
+      if (err || !data) {
+        keyIndex = []
+      } else {
+        keyIndex = JSON.parse(data)
+      }
+      cb()
+    })
+  }
+
+  // util
+
+  function ensureUnlocked(cb){
+    lock.take(function(){
+      lock.leave()
+      cb()
+    })
   }
 
 }
