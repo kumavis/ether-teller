@@ -83,7 +83,7 @@ module.exports = function(storage) {
     })
   }
 
-  function exportAll(opts, cb) {
+  function exportAll(cb) {
     ensureUnlocked(function(){
       async.map(keyIndex, getKey, cb)
     })
