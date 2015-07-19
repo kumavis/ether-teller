@@ -19,6 +19,8 @@ module.exports = function(storage) {
     lookupAll: lookupAll,
     generateIdentity: generateIdentity,
     importIdentity: importIdentity,
+    exportIdentity: exportIdentity,
+    exportAll: exportAll,
   }
 
   // lock until keyIndex is loaded
@@ -33,7 +35,7 @@ module.exports = function(storage) {
   // asynchronously returns safeKeyData for all keys
   function lookupAll(cb){
     ensureUnlocked(function(){
-      async.map(keyIndex, lookupKey, cb)
+      async.map(keyIndex, getSafeKey, cb)
     })
   }
 
@@ -64,7 +66,7 @@ module.exports = function(storage) {
     ensureUnlocked(function(){
 
       appendToKeyIndex(keyPair.id)
-      setKey(keyPair, function(err){
+      storeKey(keyPair, function(err){
         if (err) return cb(err)
         cb(null, keyObj)
       })
@@ -73,6 +75,18 @@ module.exports = function(storage) {
 
     return keyObj
 
+  }
+
+  function exportIdentity(keyId, cb) {
+    ensureUnlocked(function(){
+      getKey(keyId, cb)
+    })
+  }
+
+  function exportAll(opts, cb) {
+    ensureUnlocked(function(){
+      async.map(keyIndex, getKey, cb)
+    })
   }
 
   // private
@@ -88,15 +102,15 @@ module.exports = function(storage) {
     }
   }
 
-  function lookupKey(keyId, cb){
-    getKey(keyId, function(err, data){
+  function getSafeKey(keyId, cb){
+    lookupKey(keyId, function(err, data){
       if (err) return cb(err)
       cb(null, KeyObject(data))
     })
   }
 
   function signTx(keyId, tx, cb){
-    getKey(keyId, function(err, data){
+    lookupKey(keyId, function(err, data){
       if (err) return cb(err)
       try {
         var privateKey = new Buffer(data.privateKey, 'hex')
@@ -108,15 +122,23 @@ module.exports = function(storage) {
     })
   }
 
-  function getKey(keyId, cb) {
-    storage.get(keyStoragePrefix+keyId, function(err, data){
+  function lookupKey(keyId, cb) {
+    getKey(keyId, function(err, data){
       if (err) return cb(err)
       cb(null, deserializeKey(data))
     })
   }
 
-  function setKey(key, cb) {
-    storage.put(keyStoragePrefix+key.id, serializeKey(key), cb)
+  function storeKey(key, cb) {
+    putKey(key.id, serializeKey(key), cb)
+  }
+
+  function getKey(keyId, cb) {
+    storage.get(keyStoragePrefix+keyId, cb)
+  }
+
+  function putKey(keyId, data, cb) {
+    storage.put(keyStoragePrefix+keyId, data, cb)
   }
 
   function serializeKey(key) {

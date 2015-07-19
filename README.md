@@ -37,6 +37,11 @@ creates a new ethereum key with the label specified
 
 creates a new ethereum key with the label specified
 
+##### walletManager.exportIdentity( keyId, cb(err, result) )
+
+##### walletManager.exportAll( cb(err, result) )
+
+
 ### KeyObject
 
 A KeyObject is a simple representation of a key that does not directly expose the privateKey
